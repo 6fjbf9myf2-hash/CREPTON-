@@ -1,1 +1,109 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CREPTON | منيو</title>
+<style>
+:root{--yellow:#ffd400;--black:#111;--gray:#222}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:#fff;font-family:Arial,sans-serif}
+header{background:var(--yellow);color:#111;text-align:center;padding:24px 12px}
+header h1{margin:0;font-size:36px;letter-spacing:2px}
+header p{margin:8px 0 0}
+nav{display:flex;gap:8px;overflow-x:auto;padding:12px;background:#1b1b1b;position:sticky;top:0}
+nav a{background:var(--yellow);color:#111;padding:10px 14px;border-radius:20px;text-decoration:none;white-space:nowrap;font-weight:bold}
+main{max-width:850px;margin:auto;padding:16px}
+h2{color:var(--yellow);border-bottom:2px solid var(--yellow);padding-bottom:8px}
+.item{background:var(--gray);padding:14px;margin:12px 0;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.item h3{margin:0 0 6px}
+.price{color:var(--yellow);font-weight:bold;margin:0}
+button{border:0;border-radius:8px;background:var(--yellow);color:#111;padding:11px 14px;font-weight:bold;cursor:pointer}
+.cart{background:#222;padding:16px;border:1px solid var(--yellow);border-radius:12px;margin:24px 0}
+.cart-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #444}
+input{width:65px;padding:7px;border-radius:6px;border:0}
+footer{text-align:center;padding:20px;color:#bbb}
+</style>
+</head>
+<body>
+<header>
+<h1>CREPTON</h1>
+<p>طعم مختلف.. مزاج مختلف 🍕</p>
+</header>
+<nav>
+<a href="#pizza">بيتزا</a><a href="#crepe">كريب</a><a href="#pasta">باستا</a><a href="#meals">وجبات</a><a href="#drinks">مشروبات</a><a href="#cart">السلة 🛒</a>
+</nav>
+<main>
+<div id="menu"></div>
+<section class="cart" id="cart">
+<h2>🛒 سلة طلباتك</h2>
+<div id="cart-items">لسه ما أضفتش أصناف.</div>
+<p>الإجمالي: <strong id="total">0 جنيه</strong></p>
+<label>اسم العميل (اختياري): <input id="customer" type="text" placeholder="اسمك" style="width:150px"></label>
+<p><button onclick="sendOrder()">إرسال الطلب على واتساب</button></p>
+</section>
+</main>
+<footer>CREPTON © جميع الحقوق محفوظة</footer>
+<script>
+const sections=[
+{id:"pizza",name:"بيتزا",items:["مارجريتا","ميكس جبن","خضروات","تشكن","بيبروني"]},
+{id:"crepe",name:"كريب",items:["كريب فراخ","كريب زنجر","كريب ميكس جبن","كريب لحوم"]},
+{id:"pasta",name:"باستا",items:["باستا ألفريدو","باستا أرابياتا","باستا تشكن"]},
+{id:"meals",name:"وجبات",items:["وجبة تشكن","وجبة زنجر","وجبة كرسبي"]},
+{id:"drinks",name:"مشروبات",items:["مياه","كولا","عصير","آيس تي"]}
+];
+const prices={};
+const cart={};
+const menu=document.getElementById("menu");
+sections.forEach(section=>{
+ const area=document.createElement("section");
+ area.id=section.id;
+ area.innerHTML="<h2>"+section.name+"</h2>";
+ section.items.forEach(name=>{
+  const key=section.id+"-"+name;
+  prices[key]=0;
+  const item=document.createElement("div");
+  item.className="item";
+  item.innerHTML="<div><h3>"+name+"</h3><p class='price' id='price-"+key+"'>السعر يُضاف لاحقًا</p></div><button type='button'>أضف للسلة +</button>";
+  item.querySelector("button").onclick=()=>add(key,name);
+  area.appendChild(item);
+ });
+ menu.appendChild(area);
+});
+function add(key,name){cart[key]=cart[key]||{name:name,qty:0};cart[key].qty++;renderCart()}
+function renderCart(){
+ const box=document.getElementById("cart-items");
+ const keys=Object.keys(cart).filter(k=>cart[k].qty>0);
+ if(!keys.length){box.textContent="لسه ما أضفتش أصناف.";document.getElementById("total").textContent="0 جنيه";return}
+ box.innerHTML="";
+ let total=0;
+ keys.forEach(k=>{
+  total+=prices[k]*cart[k].qty;
+  const row=document.createElement("div");row.className="cart-row";
+  const label=document.createElement("span");label.textContent=cart[k].name+" × "+cart[k].qty;
+  const controls=document.createElement("span");
+  const minus=document.createElement("button");minus.textContent="−";minus.onclick=()=>{cart[k].qty--;if(cart[k].qty<=0)delete cart[k];renderCart()};
+  const plus=document.createElement("button");plus.textContent="+";plus.onclick=()=>{cart[k].qty++;renderCart()};
+  controls.append(minus,plus);row.append(label,controls);box.appendChild(row);
+ });
+ document.getElementById("total").textContent=total+" جنيه";
+}
+function sendOrder(){
+ const keys=Object.keys(cart).filter(k=>cart[k].qty>0);
+ if(!keys.length){alert("أضف صنفًا واحدًا على الأقل للسلة.");return}
+ const customer=document.getElementById("customer").value.trim();
+ let message="طلب جديد من منيو CREPTON%0A";
+ if(customer)message+="اسم العميل: "+encodeURIComponent(customer)+"%0A";
+ let total=0;
+ keys.forEach(k=>{
+  message+=encodeURIComponent(cart[k].name+" × "+cart[k].qty)+"%0A";
+  total+=prices[k]*cart[k].qty;
+ });
+ message+="الإجمالي المبدئي: "+total+" جنيه";
+ window.open("https://wa.me/201032222219?text="+message,"_blank");
+}
+</script>
+</body>
+</html>
+
